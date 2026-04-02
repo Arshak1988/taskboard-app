@@ -1,0 +1,47 @@
+name: Run Cypress Tests
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  cypress:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main project
+        uses: actions/checkout@v4
+
+      - name: Install main project
+        run: npm install
+
+      - name: Build main project
+        run: npm run build
+
+      - name: Start main project
+        run: npx vite preview --host &
+
+      - name: Wait for server
+        run: npx wait-on http://localhost:4173 --timeout 30000
+
+      - name: Install Chrome
+        run: |
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          sudo sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list'
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Checkout cypress project
+        uses: actions/checkout@v4
+        with:
+          repository: Arshak1988/cypressTest
+          path: cypress-tests
+
+      - name: Install cypress project
+        run: npm install
+        working-directory: cypress-tests
+
+      - name: Run cypress tests (only login test)
+        run: npx cypress run --browser chrome --spec "cypress/e2e/uiTests/login.cy.ts"
+        working-directory: cypress-tests
